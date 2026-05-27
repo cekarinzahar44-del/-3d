@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0612">
+<title>Stack Tower 3D</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body {
+    width:100%; height:100%; overflow:hidden;
+    background:#0a0612;
+    color:#fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+    touch-action:none;
+  }
+  canvas { display:block; }
+  button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+  .hidden { display:none !important; }
+
+  /* ═════════ ФОНОВЫЙ ГРАДИЕНТ ═════════ */
+  #bg {
+    position:fixed; inset:0; z-index:-1;
+    background: linear-gradient(165deg, #1a0b3d 0%, #3a0d5f 35%, #5a1670 70%, #2a0a4a 100%);
+  }
+  #bg::before {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(ellipse at 20% 0%, rgba(255,90,180,0.25) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(90,180,255,0.20) 0%, transparent 50%);
+  }
+
+  /* ═════════ ВЕРХНИЙ HUD: счёт ═════════ */
+  #hud-top {
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    padding: max(20px, env(safe-area-inset-top)) 24px 0;
+    pointer-events:none;
+    text-align:center;
+  }
+  #score {
+    font-family: 'SF Pro Display', system-ui, sans-serif;
+    font-size:84px; font-weight:900;
+    color:#fff;
+    line-height:0.95;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.5),
+                 0 0 50px rgba(255,255,255,0.15);
+    letter-spacing:-2px;
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #score.bump {
+    transform: scale(1.18);
+  }
+  #score.perfect {
+    color: #ffe066;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.5),
+                 0 0 60px rgba(255,224,102,0.8);
+  }
+  #best {
+    font-size:12px; font-weight:600; color:rgba(255,255,255,0.6);
+    margin-top:8px; letter-spacing:2px; text-transform:uppercase;
+  }
+  #combo {
+    position:fixed; top:50%; left:50%;
+    transform:translate(-50%, -50%);
+    font-size:140px; font-weight:900;
+    color:#ffe066;
+    text-shadow: 0 0 80px rgba(255,224,102,0.8);
+    opacity:0;
+    pointer-events:none;
+    z-index:60;
+    letter-spacing:-4px;
+  }
+  #combo.show {
+    animation: combo-pop 0.9s ease-out forwards;
+  }
+  @keyframes combo-pop {
+    0%   { opacity:0; transform:translate(-50%, -30%) scale(0.5); }
+    20%  { opacity:1; transform:translate(-50%, -50%) scale(1.1); }
+    40%  { transform:translate(-50%, -50%) scale(1); }
+    100% { opacity:0; transform:translate(-50%, -70%) scale(0.95); }
+  }
+
+  /* ═════════ СТАРТОВЫЙ ЭКРАН ═════════ */
+  #start {
+    position:fixed; inset:0; z-index:200;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:40px 24px;
+    background: linear-gradient(165deg, rgba(10,6,18,0.5), rgba(10,6,18,0.85));
+    backdrop-filter: blur(4px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  #start.hide {
+    opacity:0; pointer-events:none;
+    transform:scale(1.05);
+  }
+  .logo-stack {
+    display:flex; flex-direction:column; gap:6px; align-items:center;
+    margin-bottom:30px;
+    perspective: 600px;
+  }
+  .logo-block {
+    width:120px; height:18px;
+    border-radius:3px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3),
+                inset 0 -3px 0 rgba(0,0,0,0.15);
+    transform-style: preserve-3d;
+    animation: stack-in 1.5s ease-out infinite;
+  }
+  .logo-block:nth-child(1) { background:linear-gradient(135deg, #ff5e9c, #ff7eb3); animation-delay:0s; }
+  .logo-block:nth-child(2) { background:linear-gradient(135deg, #c065ff, #d989ff); animation-delay:0.2s; }
+  .logo-block:nth-child(3) { background:linear-gradient(135deg, #5e9cff, #7eb3ff); animation-delay:0.4s; }
+  .logo-block:nth-child(4) { background:linear-gradient(135deg, #5eddff, #7eebff); animation-delay:0.6s; }
+  @keyframes stack-in {
+    0%, 100% { transform: rotateX(15deg) translateY(0); }
+    50% { transform: rotateX(15deg) translateY(-8px); }
+  }
+  #start h1 {
+    font-size:42px; font-weight:900;
+    letter-spacing:-1px;
+    background: linear-gradient(135deg, #fff, #ffe066);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom:6px;
+  }
+  #start .sub {
+    font-size:12px; letter-spacing:6px;
+    color:rgba(255,255,255,0.6);
+    text-transform:uppercase;
+    margin-bottom:36px;
+  }
+  .play-btn {
+    padding: 18px 56px;
+    background: linear-gradient(135deg, #ff5e9c, #c065ff);
+    border-radius:50px;
+    color:#fff; font-size:18px; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase;
+    box-shadow: 0 12px 40px rgba(255,94,156,0.4),
+                inset 0 -3px 0 rgba(0,0,0,0.15);
+    transition: transform 0.15s;
+    position:relative;
+  }
+  .play-btn:active {
+    transform: scale(0.95) translateY(2px);
+    box-shadow: 0 6px 20px rgba(255,94,156,0.4);
+  }
+  .play-btn::after {
+    content:''; position:absolute;
+    inset:-3px;
+    border-radius:50px;
+    background: linear-gradient(135deg, #ff5e9c, #c065ff);
+    z-index:-1;
+    filter: blur(20px);
+    opacity:0.6;
+  }
+  .hint {
+    margin-top:30px;
+    font-size:13px; letter-spacing:1px;
+    color:rgba(255,255,255,0.5);
+    text-align:center; max-width:280px; line-height:1.6;
+  }
+  .stat-row {
+    margin-top:34px;
+    display:flex; gap:30px;
+  }
+  .stat {
+    text-align:center;
+  }
+  .stat-val {
+    font-size:32px; font-weight:900;
+    background: linear-gradient(135deg, #ffe066, #ff8e6e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label {
+    font-size:10px; letter-spacing:2px;
+    color:rgba(255,255,255,0.5);
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+
+  /* ═════════ ЭКРАН КОНЦА ═════════ */
+  #gameover {
+    position:fixed; inset:0; z-index:300;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:40px 24px;
+    background: linear-gradient(165deg, rgba(10,6,18,0.7), rgba(10,6,18,0.95));
+    backdrop-filter: blur(8px);
+    opacity:0; pointer-events:none;
+    transition: opacity 0.5s;
+  }
+  #gameover.show { opacity:1; pointer-events:auto; }
+  .go-title {
+    font-size:48px; font-weight:900;
+    background: linear-gradient(135deg, #ff5e9c, #c065ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom:30px;
+    letter-spacing:-1px;
+  }
+  .score-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius:24px;
+    padding:30px 50px;
+    text-align:center;
+    margin-bottom:14px;
+    min-width:240px;
+  }
+  .sc-label {
+    font-size:11px; letter-spacing:3px;
+    color:rgba(255,255,255,0.5);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .sc-val {
+    font-size:60px; font-weight:900;
+    color:#fff;
+    line-height:1;
+  }
+  .sc-val.gold {
+    background: linear-gradient(135deg, #ffe066, #ff8e6e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .new-best {
+    font-size:12px; font-weight:700;
+    color:#ffe066;
+    letter-spacing:2px;
+    margin-top:6px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity:0.7; }
+    50% { opacity:1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<canvas id="canvas"></canvas>
+
+<div id="hud-top" class="hidden">
+  <div id="score">0</div>
+  <div id="best">BEST 0</div>
+</div>
+
+<div id="combo"></div>
+
+<div id="start">
+  <div class="logo-stack">
+    <div class="logo-block"></div>
+    <div class="logo-block"></div>
+    <div class="logo-block"></div>
+    <div class="logo-block"></div>
+  </div>
+  <h1>STACK TOWER</h1>
+  <div class="sub">3D · Endless</div>
+  <button class="play-btn" onclick="Game.start()">PLAY</button>
+  <div class="hint">Тапни в нужный момент,<br>чтобы блок упал точно на башню.<br>Идеальное попадание — больше очков.</div>
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-val" id="startBest">0</div>
+      <div class="stat-label">Лучший</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="startGames">0</div>
+      <div class="stat-label">Игр</div>
+    </div>
+  </div>
+</div>
+
+<div id="gameover">
+  <div class="go-title">GAME OVER</div>
+  <div class="score-card">
+    <div class="sc-label">Счёт</div>
+    <div class="sc-val" id="goScore">0</div>
+  </div>
+  <div class="score-card">
+    <div class="sc-label">Лучший</div>
+    <div class="sc-val gold" id="goBest">0</div>
+    <div class="new-best hidden" id="newBest">★ НОВЫЙ РЕКОРД</div>
+  </div>
+  <button class="play-btn" onclick="Game.start()" style="margin-top:14px;">PLAY AGAIN</button>
+</div>
+
+<script>
+//═════════════════════════════════════════════════════════════════
+// ENGINE — Three.js setup
+//═════════════════════════════════════════════════════════════════
+const Engine = (() => {
+  let renderer, scene, camera;
+  let pendingAnims = [];
+
+  function init(canvas) {
+    renderer = new THREE.WebGLRenderer({
+      canvas, antialias: true, powerPreference: 'high-performance',
+      alpha: true
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.setClearColor(0x000000, 0);
+
+    scene = new THREE.Scene();
+
+    const aspect = window.innerWidth / window.innerHeight;
+    camera = new THREE.OrthographicCamera(
+      -8 * aspect, 8 * aspect, 8, -8, 0.1, 100
+    );
+    camera.position.set(8, 10, 8);
+    camera.lookAt(0, 0, 0);
+
+    _buildLights();
+    _renderLoop();
+    window.addEventListener('resize', _onResize);
+  }
+
+  function _buildLights() {
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+    const key = new THREE.DirectionalLight(0xffffff, 0.85);
+    key.position.set(8, 18, 8);
+    key.castShadow = true;
+    key.shadow.mapSize.width = 2048;
+    key.shadow.mapSize.height = 2048;
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 60;
+    key.shadow.camera.left = -15;
+    key.shadow.camera.right = 15;
+    key.shadow.camera.top = 25;
+    key.shadow.camera.bottom = -15;
+    key.shadow.bias = -0.0005;
+    key.shadow.radius = 3;
+    scene.add(key);
+
+    // Тёплый rim
+    const rim = new THREE.DirectionalLight(0xff8ec0, 0.45);
+    rim.position.set(-6, 5, -6);
+    scene.add(rim);
+
+    // Холодный fill
+    const fill = new THREE.DirectionalLight(0x6ab0ff, 0.30);
+    fill.position.set(6, 3, -8);
+    scene.add(fill);
+  }
+
+  function addAnimation(fn) { pendingAnims.push(fn); }
+  function clearAnimations() { pendingAnims = []; }
+
+  function moveCameraY(targetY, duration = 0.5) {
+    const startY = camera.position.y;
+    const startLookY = camera._lookY || 0;
+    let t = 0;
+    pendingAnims.push(dt => {
+      t = Math.min(t + dt / duration, 1);
+      const e = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      camera.position.y = startY + (targetY - startY) * e;
+      const lookY = startLookY + ((targetY - 10) - startLookY) * e;
+      camera._lookY = lookY;
+      camera.lookAt(0, lookY, 0);
+      return t >= 1;
+    });
+  }
+
+  function resetCamera() {
+    camera.position.set(8, 10, 8);
+    camera._lookY = 0;
+    camera.lookAt(0, 0, 0);
+  }
+
+  let lastT = 0;
+  function _renderLoop() {
+    lastT = performance.now();
+    const loop = () => {
+      requestAnimationFrame(loop);
+      const now = performance.now();
+      const dt = Math.min((now - lastT) / 1000, 0.05);
+      lastT = now;
+      if (pendingAnims.length) pendingAnims = pendingAnims.filter(fn => !fn(dt));
+      renderer.render(scene, camera);
+    };
+    loop();
+  }
+
+  function _onResize() {
+    const aspect = window.innerWidth / window.innerHeight;
+    camera.left = -8 * aspect;
+    camera.right = 8 * aspect;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  return {
+    init, addAnimation, clearAnimations, moveCameraY, resetCamera,
+    get scene() { return scene; },
+    get camera() { return camera; }
+  };
+})();
+
+//═════════════════════════════════════════════════════════════════
+// PARTICLES — эффект разлёта при идеальном попадании
+//═════════════════════════════════════════════════════════════════
+const Particles = (() => {
+  function burst(x, y, z, color) {
+    const count = 12;
+    const group = new THREE.Group();
+    Engine.scene.add(group);
+
+    for (let i = 0; i < count; i++) {
+      const geo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+      const mat = new THREE.MeshStandardMaterial({
+        color, emissive: color, emissiveIntensity: 0.5,
+        transparent: true, opacity: 1
+      });
+      const p = new THREE.Mesh(geo, mat);
+      p.position.set(x, y, z);
+
+      const a = (i / count) * Math.PI * 2;
+      const vx = Math.cos(a) * (2 + Math.random() * 2);
+      const vz = Math.sin(a) * (2 + Math.random() * 2);
+      const vy = 2 + Math.random() * 2;
+
+      group.add(p);
+
+      let t = 0;
+      const life = 0.8;
+      Engine.addAnimation(dt => {
+        t += dt;
+        const k = t / life;
+        p.position.x += vx * dt;
+        p.position.y += vy * dt - 5 * t * dt * 4;
+        p.position.z += vz * dt;
+        p.rotation.x += dt * 8;
+        p.rotation.z += dt * 6;
+        mat.opacity = 1 - k;
+        if (t >= life) {
+          group.remove(p);
+          geo.dispose(); mat.dispose();
+          if (group.children.length === 0) Engine.scene.remove(group);
+          return true;
+        }
+        return false;
+      });
+    }
+  }
+
+  // Кольцо-вспышка
+  function shockwave(x, y, z, color) {
+    const geo = new THREE.RingGeometry(0.1, 0.5, 32);
+    const mat = new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.8,
+      side: THREE.DoubleSide, depthWrite: false
+    });
+    const ring = new THREE.Mesh(geo, mat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, y + 0.1, z);
+    Engine.scene.add(ring);
+
+    let t = 0;
+    const life = 0.6;
+    Engine.addAnimation(dt => {
+      t += dt;
+      const k = t / life;
+      const scale = 1 + k * 8;
+      ring.scale.set(scale, scale, 1);
+      mat.opacity = 0.8 * (1 - k);
+      if (t >= life) {
+        Engine.scene.remove(ring);
+        geo.dispose(); mat.dispose();
+        return true;
+      }
+      return false;
+    });
+  }
+
+  return { burst, shockwave };
+})();
+
+//═════════════════════════════════════════════════════════════════
+// GAME — основная логика стека
+//═════════════════════════════════════════════════════════════════
+const Game = (() => {
+  const BLOCK_HEIGHT = 0.6;
+  const BLOCK_BASE_SIZE = 4;     // ширина и глубина первого блока
+  const SPEED_BASE = 4.5;
+  const SPEED_INCREMENT = 0.12;
+  const SPEED_MAX = 9;
+  const PERFECT_THRESHOLD = 0.08; // насколько близко чтобы посчиталось perfect
+
+  let blocks = [];
+  let movingBlock = null;       // активный движущийся блок
+  let moveAxis = 'x';            // 'x' или 'z'
+  let moveDir = 1;
+  let moveSpeed = SPEED_BASE;
+  let score = 0;
+  let perfectCombo = 0;
+  let running = false;
+  let gameOverFlag = false;
+  let allowInput = false;
+
+  // Statistics в localStorage
+  let stats = {
+    best: 0,
+    games: 0
+  };
+  try {
+    const s = localStorage.getItem('stack3d_stats');
+    if (s) stats = { ...stats, ...JSON.parse(s) };
+  } catch {}
+
+  function _saveStats() {
+    try { localStorage.setItem('stack3d_stats', JSON.stringify(stats)); } catch {}
+  }
+
+  // Цвет блока в зависимости от высоты — плавный градиент по HSL
+  function _blockColor(index) {
+    const hue = (200 + index * 8) % 360;
+    return new THREE.Color().setHSL(hue / 360, 0.65, 0.60);
+  }
+
+  function _makeBlock(size, position, color) {
+    const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.35,
+      metalness: 0.15,
+      emissive: color.clone().multiplyScalar(0.08)
+    });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.copy(position);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }
+
+  function _dropPiece(size, position, color, velocity) {
+    // Кусочек, который отвалился — падает с физикой
+    const piece = _makeBlock(size, position, color);
+    Engine.scene.add(piece);
+    let vy = 0;
+    let vRot = (Math.random() - 0.5) * 4;
+    let t = 0;
+    Engine.addAnimation(dt => {
+      t += dt;
+      vy -= 18 * dt;  // гравитация
+      piece.position.y += vy * dt;
+      piece.position.x += velocity.x * dt;
+      piece.position.z += velocity.z * dt;
+      piece.rotation.z += vRot * dt;
+      piece.rotation.x += vRot * 0.5 * dt;
+      if (piece.position.y < -15) {
+        Engine.scene.remove(piece);
+        piece.geometry.dispose();
+        piece.material.dispose();
+        return true;
+      }
+      return false;
+    });
+  }
+
+  function start() {
+    // Скрыть стартовый/гейм-овер экраны
+    document.getElementById('start').classList.add('hide');
+    document.getElementById('gameover').classList.remove('show');
+    document.getElementById('hud-top').classList.remove('hidden');
+
+    // Сброс
+    _clearScene();
+    score = 0;
+    perfectCombo = 0;
+    moveSpeed = SPEED_BASE;
+    gameOverFlag = false;
+    running = true;
+    allowInput = false;
+    Engine.clearAnimations();
+    Engine.resetCamera();
+
+    _updateScoreUI();
+
+    // База — широкий блок внизу
+    const baseColor = _blockColor(0);
+    const baseBlock = _makeBlock(
+      { x: BLOCK_BASE_SIZE, y: BLOCK_HEIGHT * 3, z: BLOCK_BASE_SIZE },
+      new THREE.Vector3(0, -BLOCK_HEIGHT * 1.5, 0),
+      baseColor
+    );
+    baseBlock.userData = {
+      size: { x: BLOCK_BASE_SIZE, y: BLOCK_HEIGHT * 3, z: BLOCK_BASE_SIZE }
+    };
+    Engine.scene.add(baseBlock);
+    blocks.push(baseBlock);
+
+    // Первый летающий блок
+    _spawnNext();
+  }
+
+  function _clearScene() {
+    blocks.forEach(b => {
+      Engine.scene.remove(b);
+      if (b.geometry) b.geometry.dispose();
+      if (b.material) b.material.dispose();
+    });
+    blocks = [];
+    if (movingBlock) {
+      Engine.scene.remove(movingBlock);
+      if (movingBlock.geometry) movingBlock.geometry.dispose();
+      if (movingBlock.material) movingBlock.material.dispose();
+      movingBlock = null;
+    }
+  }
+
+  function _spawnNext() {
+    const last = blocks[blocks.length - 1];
+    const lastSize = last.userData.size;
+    const lastY = last.position.y + lastSize.y / 2;
+
+    // Чередуем оси X и Z
+    moveAxis = (blocks.length % 2 === 1) ? 'x' : 'z';
+    moveDir = 1;
+
+    const newSize = {
+      x: lastSize.x,
+      y: BLOCK_HEIGHT,
+      z: lastSize.z
+    };
+
+    // Стартовая позиция — за пределами видимой части по оси движения
+    const startOffset = 6;
+    const pos = new THREE.Vector3(last.position.x, lastY + BLOCK_HEIGHT / 2, last.position.z);
+    if (moveAxis === 'x') pos.x = -startOffset;
+    else pos.z = -startOffset;
+
+    const color = _blockColor(blocks.length);
+    movingBlock = _makeBlock(newSize, pos, color);
+    movingBlock.userData = { size: { ...newSize } };
+    Engine.scene.add(movingBlock);
+
+    // Камера поднимается за башней
+    if (blocks.length > 3) {
+      const targetCamY = blocks.length * BLOCK_HEIGHT + 9;
+      Engine.moveCameraY(targetCamY, 0.4);
+    }
+
+    allowInput = true;
+    _runMover();
+  }
+
+  function _runMover() {
+    Engine.addAnimation(dt => {
+      if (!movingBlock || gameOverFlag) return true;
+
+      if (moveAxis === 'x') {
+        movingBlock.position.x += moveDir * moveSpeed * dt;
+        if (movingBlock.position.x > 6) moveDir = -1;
+        if (movingBlock.position.x < -6) moveDir = 1;
+      } else {
+        movingBlock.position.z += moveDir * moveSpeed * dt;
+        if (movingBlock.position.z > 6) moveDir = -1;
+        if (movingBlock.position.z < -6) moveDir = 1;
+      }
+      return false;
+    });
+  }
+
+  function placeBlock() {
+    if (!running || !allowInput || gameOverFlag || !movingBlock) return;
+    allowInput = false;
+
+    const last = blocks[blocks.length - 1];
+    const lastSize = last.userData.size;
+    const movSize = movingBlock.userData.size;
+
+    if (moveAxis === 'x') {
+      const diff = movingBlock.position.x - last.position.x;
+      const overlap = movSize.x - Math.abs(diff);
+
+      if (overlap <= 0) {
+        // Полный промах — Game Over
+        _missEnd();
+        return;
+      }
+
+      // Perfect?
+      const isPerfect = Math.abs(diff) < PERFECT_THRESHOLD;
+      if (isPerfect) {
+        // Идеально — выровнять блок, не обрезать, бонус
+        movingBlock.position.x = last.position.x;
+        perfectCombo++;
+        score += 5;
+        _showCombo();
+        Particles.burst(movingBlock.position.x, movingBlock.position.y, movingBlock.position.z, movingBlock.material.color);
+        Particles.shockwave(movingBlock.position.x, movingBlock.position.y - movSize.y / 2, movingBlock.position.z, movingBlock.material.color);
+
+        // Каждые 3 идеальных — растим блок обратно
+        if (perfectCombo > 0 && perfectCombo % 3 === 0) {
+          const grow = Math.min(0.4, BLOCK_BASE_SIZE - movSize.x);
+          if (grow > 0.01) {
+            const newSize = movSize.x + grow;
+            movingBlock.geometry.dispose();
+            movingBlock.geometry = new THREE.BoxGeometry(newSize, movSize.y, movSize.z);
+            movingBlock.userData.size.x = newSize;
+          }
+        }
+      } else {
+        perfectCombo = 0;
+        // Обрезаем блок
+        const newWidth = overlap;
+        const newCenterX = (Math.max(movingBlock.position.x - movSize.x/2, last.position.x - lastSize.x/2) +
+                          Math.min(movingBlock.position.x + movSize.x/2, last.position.x + lastSize.x/2)) / 2;
+        // Отвалившийся кусок
+        const dropX = (diff > 0)
+          ? newCenterX + newWidth/2 + (movSize.x - newWidth)/2
+          : newCenterX - newWidth/2 - (movSize.x - newWidth)/2;
+        const dropWidth = movSize.x - newWidth;
+        _dropPiece(
+          { x: dropWidth, y: movSize.y, z: movSize.z },
+          new THREE.Vector3(dropX, movingBlock.position.y, movingBlock.position.z),
+          movingBlock.material.color,
+          { x: diff > 0 ? 2 : -2, z: 0 }
+        );
+        // Обновляем активный
+        movingBlock.geometry.dispose();
+        movingBlock.geometry = new THREE.BoxGeometry(newWidth, movSize.y, movSize.z);
+        movingBlock.position.x = newCenterX;
+        movingBlock.userData.size.x = newWidth;
+        score += 1;
+      }
+    } else {
+      // Та же логика по Z
+      const diff = movingBlock.position.z - last.position.z;
+      const overlap = movSize.z - Math.abs(diff);
+
+      if (overlap <= 0) { _missEnd(); return; }
+
+      const isPerfect = Math.abs(diff) < PERFECT_THRESHOLD;
+      if (isPerfect) {
+        movingBlock.position.z = last.position.z;
+        perfectCombo++;
+        score += 5;
+        _showCombo();
+        Particles.burst(movingBlock.position.x, movingBlock.position.y, movingBlock.position.z, movingBlock.material.color);
+        Particles.shockwave(movingBlock.position.x, movingBlock.position.y - movSize.y / 2, movingBlock.position.z, movingBlock.material.color);
+
+        if (perfectCombo > 0 && perfectCombo % 3 === 0) {
+          const grow = Math.min(0.4, BLOCK_BASE_SIZE - movSize.z);
+          if (grow > 0.01) {
+            const newSize = movSize.z + grow;
+            movingBlock.geometry.dispose();
+            movingBlock.geometry = new THREE.BoxGeometry(movSize.x, movSize.y, newSize);
+            movingBlock.userData.size.z = newSize;
+          }
+        }
+      } else {
+        perfectCombo = 0;
+        const newDepth = overlap;
+        const newCenterZ = (Math.max(movingBlock.position.z - movSize.z/2, last.position.z - lastSize.z/2) +
+                          Math.min(movingBlock.position.z + movSize.z/2, last.position.z + lastSize.z/2)) / 2;
+        const dropZ = (diff > 0)
+          ? newCenterZ + newDepth/2 + (movSize.z - newDepth)/2
+          : newCenterZ - newDepth/2 - (movSize.z - newDepth)/2;
+        const dropDepth = movSize.z - newDepth;
+        _dropPiece(
+          { x: movSize.x, y: movSize.y, z: dropDepth },
+          new THREE.Vector3(movingBlock.position.x, movingBlock.position.y, dropZ),
+          movingBlock.material.color,
+          { x: 0, z: diff > 0 ? 2 : -2 }
+        );
+        movingBlock.geometry.dispose();
+        movingBlock.geometry = new THREE.BoxGeometry(movSize.x, movSize.y, newDepth);
+        movingBlock.position.z = newCenterZ;
+        movingBlock.userData.size.z = newDepth;
+        score += 1;
+      }
+    }
+
+    blocks.push(movingBlock);
+    movingBlock = null;
+
+    _updateScoreUI();
+
+    // Ускоряемся
+    moveSpeed = Math.min(SPEED_MAX, SPEED_BASE + score * SPEED_INCREMENT);
+
+    setTimeout(() => {
+      if (!gameOverFlag) _spawnNext();
+    }, 150);
+  }
+
+  function _missEnd() {
+    // Промах — блок падает
+    if (movingBlock) {
+      const movSize = movingBlock.userData.size;
+      const vx = (moveAxis === 'x') ? (moveDir * 1.5) : 0;
+      const vz = (moveAxis === 'z') ? (moveDir * 1.5) : 0;
+      _dropPiece(
+        movSize,
+        movingBlock.position.clone(),
+        movingBlock.material.color,
+        { x: vx, z: vz }
+      );
+      Engine.scene.remove(movingBlock);
+      movingBlock.geometry.dispose();
+      movingBlock.material.dispose();
+      movingBlock = null;
+    }
+
+    gameOverFlag = true;
+    running = false;
+    allowInput = false;
+
+    stats.games++;
+    const newBest = score > stats.best;
+    if (newBest) stats.best = score;
+    _saveStats();
+
+    setTimeout(() => {
+      document.getElementById('hud-top').classList.add('hidden');
+      document.getElementById('goScore').textContent = score;
+      document.getElementById('goBest').textContent = stats.best;
+      document.getElementById('newBest').classList.toggle('hidden', !newBest);
+      document.getElementById('gameover').classList.add('show');
+    }, 1000);
+  }
+
+  function _updateScoreUI() {
+    const el = document.getElementById('score');
+    el.textContent = score;
+    el.classList.remove('bump', 'perfect');
+    void el.offsetWidth; // restart animation
+    el.classList.add('bump');
+    if (perfectCombo > 0) el.classList.add('perfect');
+    document.getElementById('best').textContent = 'BEST ' + stats.best;
+  }
+
+  function _showCombo() {
+    if (perfectCombo < 2) return;
+    const el = document.getElementById('combo');
+    el.textContent = 'PERFECT ×' + perfectCombo;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  }
+
+  function updateStartScreen() {
+    document.getElementById('startBest').textContent = stats.best;
+    document.getElementById('startGames').textContent = stats.games;
+  }
+
+  return { start, placeBlock, updateStartScreen };
+})();
+
+//═════════════════════════════════════════════════════════════════
+// INIT
+//═════════════════════════════════════════════════════════════════
+(() => {
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready(); tg.expand();
+    if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+    if (tg.setHeaderColor) tg.setHeaderColor('#0a0612');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#0a0612');
+  }
+
+  Engine.init(document.getElementById('canvas'));
+  Game.updateStartScreen();
+
+  // Тап = поставить блок
+  const handleTap = (e) => {
+    // Не реагируем на тап по кнопкам/стартовому экрану
+    if (e.target.closest('button')) return;
+    if (!document.getElementById('start').classList.contains('hide')) return;
+    if (document.getElementById('gameover').classList.contains('show')) return;
+    Game.placeBlock();
+  };
+  document.addEventListener('touchstart', handleTap, { passive: true });
+  document.addEventListener('mousedown', (e) => {
+    // На десктопе — только если это не клик по кнопке
+    if (e.button === 0) handleTap(e);
+  });
+
+  // Telegram BackButton
+  if (tg?.BackButton) {
+    tg.BackButton.onClick(() => {
+      // На главном — закрываем мини-апп
+      if (!document.getElementById('start').classList.contains('hide')) {
+        tg.close();
+      } else {
+        // В игре — на главную
+        location.reload();
+      }
+    });
+    tg.BackButton.hide();
+  }
+})();
+</script>
+</body>
+</html>
