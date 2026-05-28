@@ -1,7 +1,6 @@
 // server.js — Stack Tower 3D
 // Express раздаёт игру + Telegraf-бот показывает её через Menu Button
 
-require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { Telegraf } = require('telegraf');
@@ -9,7 +8,7 @@ const { Telegraf } = require('telegraf');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const WEBAPP_URL = process.env.WEBAPP_URL; // должен быть https://...
+const WEBAPP_URL = process.env.WEBAPP_URL;
 
 // ════════ ВЕБ-СЕРВЕР ════════
 app.use(express.static(__dirname));
@@ -28,15 +27,12 @@ if (!BOT_TOKEN) {
 } else {
   const bot = new Telegraf(BOT_TOKEN);
 
-  // Команда /start
   bot.start(async (ctx) => {
     try {
       await ctx.reply(
-        `🎮 *Stack Tower 3D*\n\n` +
-        `Стек цветных блоков\\. Тапни в нужный момент, чтобы блок упал точно на башню\\.\n\n` +
-        `Идеальное попадание — больше очков\\!`,
+        '🎮 *Stack Tower 3D*\n\nСтек цветных блоков. Тапни в нужный момент, чтобы блок упал точно на башню.\n\nИдеальное попадание — больше очков!',
         {
-          parse_mode: 'MarkdownV2',
+          parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
               [{ text: '🎮 Играть', web_app: { url: WEBAPP_URL } }]
@@ -49,10 +45,8 @@ if (!BOT_TOKEN) {
     }
   });
 
-  // /help
   bot.help(ctx => ctx.reply('Нажми /start чтобы открыть игру 🎮'));
 
-  // Любое сообщение — снова показываем кнопку
   bot.on('text', async (ctx) => {
     try {
       await ctx.reply('🎮 Открыть игру:', {
@@ -67,7 +61,6 @@ if (!BOT_TOKEN) {
     }
   });
 
-  // Установить Menu Button (постоянная кнопка слева от поля ввода)
   bot.telegram.setChatMenuButton({
     menuButton: {
       type: 'web_app',
@@ -89,7 +82,6 @@ if (!BOT_TOKEN) {
     console.error('❌ Bot launch failed:', err.message);
   });
 
-  // Корректное завершение
   process.on('SIGINT', () => { bot.stop('SIGINT'); process.exit(); });
   process.on('SIGTERM', () => { bot.stop('SIGTERM'); process.exit(); });
 }
