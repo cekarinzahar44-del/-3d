@@ -1,18 +1,13 @@
 // server.js — минимальный Node.js сервер для Stack Tower 3D
-
 const express = require('express');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Раздача всех файлов из корня проекта
 app.use(express.static(__dirname));
 
-// Главная страница
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-
-// Healthcheck для BotHost
 app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
 app.listen(PORT, () => {
