@@ -18,45 +18,42 @@
     user-select:none;
     touch-action:none;
   }
-  canvas { display:block; }
+  canvas { display:block; position:fixed; inset:0; z-index:0; }
   button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
   .hidden { display:none !important; }
 
-  /* ═════════ ФОНОВЫЙ ГРАДИЕНТ ═════════ */
+  /* ═════════ ФОН (CSS — гарантированно работает) ═════════ */
   #bg {
     position:fixed; inset:0; z-index:-1;
-    background: linear-gradient(165deg, #1a0b3d 0%, #3a0d5f 35%, #5a1670 70%, #2a0a4a 100%);
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(255,90,160,0.30) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(110,90,255,0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, #2a0e4a 0%, #0a0612 70%);
   }
-  #bg::before {
-    content:''; position:absolute; inset:0;
-    background: radial-gradient(ellipse at 20% 0%, rgba(255,90,180,0.25) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(90,180,255,0.20) 0%, transparent 50%);
+  #vignette {
+    position:fixed; inset:0; z-index:3;
+    pointer-events:none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%);
   }
 
-  /* ═════════ ВЕРХНИЙ HUD: счёт ═════════ */
+  /* ═════════ HUD ═════════ */
   #hud-top {
-    position:fixed; top:0; left:0; right:0; z-index:50;
+    position:fixed; top:0; left:0; right:0; z-index:5;
     padding: max(20px, env(safe-area-inset-top)) 24px 0;
     pointer-events:none;
     text-align:center;
   }
   #score {
-    font-family: 'SF Pro Display', system-ui, sans-serif;
-    font-size:84px; font-weight:900;
-    color:#fff;
+    font-size:84px; font-weight:900; color:#fff;
     line-height:0.95;
-    text-shadow: 0 4px 30px rgba(0,0,0,0.5),
-                 0 0 50px rgba(255,255,255,0.15);
+    text-shadow: 0 4px 30px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.15);
     letter-spacing:-2px;
     transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  #score.bump {
-    transform: scale(1.18);
-  }
+  #score.bump { transform: scale(1.18); }
   #score.perfect {
     color: #ffe066;
-    text-shadow: 0 4px 30px rgba(0,0,0,0.5),
-                 0 0 60px rgba(255,224,102,0.8);
+    text-shadow: 0 4px 30px rgba(0,0,0,0.5), 0 0 60px rgba(255,224,102,0.8);
   }
   #best {
     font-size:12px; font-weight:600; color:rgba(255,255,255,0.6);
@@ -65,17 +62,12 @@
   #combo {
     position:fixed; top:50%; left:50%;
     transform:translate(-50%, -50%);
-    font-size:140px; font-weight:900;
-    color:#ffe066;
+    font-size:120px; font-weight:900; color:#ffe066;
     text-shadow: 0 0 80px rgba(255,224,102,0.8);
-    opacity:0;
-    pointer-events:none;
-    z-index:60;
+    opacity:0; pointer-events:none; z-index:6;
     letter-spacing:-4px;
   }
-  #combo.show {
-    animation: combo-pop 0.9s ease-out forwards;
-  }
+  #combo.show { animation: combo-pop 0.9s ease-out forwards; }
   @keyframes combo-pop {
     0%   { opacity:0; transform:translate(-50%, -30%) scale(0.5); }
     20%  { opacity:1; transform:translate(-50%, -50%) scale(1.1); }
@@ -89,34 +81,28 @@
     display:flex; flex-direction:column;
     align-items:center; justify-content:center;
     padding:40px 24px;
-    background: linear-gradient(165deg, rgba(10,6,18,0.5), rgba(10,6,18,0.85));
-    backdrop-filter: blur(4px);
+    background: radial-gradient(ellipse at center, rgba(10,6,18,0.4) 0%, rgba(10,6,18,0.85) 100%);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     transition: opacity 0.5s, transform 0.5s;
   }
-  #start.hide {
-    opacity:0; pointer-events:none;
-    transform:scale(1.05);
-  }
+  #start.hide { opacity:0; pointer-events:none; transform:scale(1.05); }
   .logo-stack {
     display:flex; flex-direction:column; gap:6px; align-items:center;
     margin-bottom:30px;
-    perspective: 600px;
   }
   .logo-block {
-    width:120px; height:18px;
-    border-radius:3px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3),
-                inset 0 -3px 0 rgba(0,0,0,0.15);
-    transform-style: preserve-3d;
-    animation: stack-in 1.5s ease-out infinite;
+    width:120px; height:18px; border-radius:3px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 -3px 0 rgba(0,0,0,0.15);
+    animation: stack-in 1.5s ease-in-out infinite;
   }
   .logo-block:nth-child(1) { background:linear-gradient(135deg, #ff5e9c, #ff7eb3); animation-delay:0s; }
   .logo-block:nth-child(2) { background:linear-gradient(135deg, #c065ff, #d989ff); animation-delay:0.2s; }
   .logo-block:nth-child(3) { background:linear-gradient(135deg, #5e9cff, #7eb3ff); animation-delay:0.4s; }
   .logo-block:nth-child(4) { background:linear-gradient(135deg, #5eddff, #7eebff); animation-delay:0.6s; }
   @keyframes stack-in {
-    0%, 100% { transform: rotateX(15deg) translateY(0); }
-    50% { transform: rotateX(15deg) translateY(-8px); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
   }
   #start h1 {
     font-size:42px; font-weight:900;
@@ -139,37 +125,18 @@
     border-radius:50px;
     color:#fff; font-size:18px; font-weight:700;
     letter-spacing:2px; text-transform:uppercase;
-    box-shadow: 0 12px 40px rgba(255,94,156,0.4),
-                inset 0 -3px 0 rgba(0,0,0,0.15);
+    box-shadow: 0 12px 40px rgba(255,94,156,0.4), inset 0 -3px 0 rgba(0,0,0,0.15);
     transition: transform 0.15s;
-    position:relative;
   }
-  .play-btn:active {
-    transform: scale(0.95) translateY(2px);
-    box-shadow: 0 6px 20px rgba(255,94,156,0.4);
-  }
-  .play-btn::after {
-    content:''; position:absolute;
-    inset:-3px;
-    border-radius:50px;
-    background: linear-gradient(135deg, #ff5e9c, #c065ff);
-    z-index:-1;
-    filter: blur(20px);
-    opacity:0.6;
-  }
+  .play-btn:active { transform: scale(0.95) translateY(2px); }
   .hint {
     margin-top:30px;
     font-size:13px; letter-spacing:1px;
-    color:rgba(255,255,255,0.5);
+    color:rgba(255,255,255,0.55);
     text-align:center; max-width:280px; line-height:1.6;
   }
-  .stat-row {
-    margin-top:34px;
-    display:flex; gap:30px;
-  }
-  .stat {
-    text-align:center;
-  }
+  .stat-row { margin-top:34px; display:flex; gap:30px; }
+  .stat { text-align:center; }
   .stat-val {
     font-size:32px; font-weight:900;
     background: linear-gradient(135deg, #ffe066, #ff8e6e);
@@ -190,7 +157,7 @@
     display:flex; flex-direction:column;
     align-items:center; justify-content:center;
     padding:40px 24px;
-    background: linear-gradient(165deg, rgba(10,6,18,0.7), rgba(10,6,18,0.95));
+    background: radial-gradient(ellipse at center, rgba(10,6,18,0.7) 0%, rgba(10,6,18,0.95) 100%);
     backdrop-filter: blur(8px);
     opacity:0; pointer-events:none;
     transition: opacity 0.5s;
@@ -221,11 +188,7 @@
     text-transform:uppercase;
     margin-bottom:8px;
   }
-  .sc-val {
-    font-size:60px; font-weight:900;
-    color:#fff;
-    line-height:1;
-  }
+  .sc-val { font-size:60px; font-weight:900; color:#fff; line-height:1; }
   .sc-val.gold {
     background: linear-gradient(135deg, #ffe066, #ff8e6e);
     -webkit-background-clip: text;
@@ -243,12 +206,25 @@
     0%, 100% { opacity:0.7; }
     50% { opacity:1; }
   }
+
+  /* ═════════ ERROR-BANNER ═════════ */
+  #err {
+    position:fixed; top:20px; left:20px; right:20px;
+    z-index:9999; padding:14px 18px;
+    background:#3a0d0d; border:1px solid #e85a4f;
+    border-radius:12px; font-size:13px;
+    display:none;
+  }
+  #err.show { display:block; }
 </style>
 </head>
 <body>
 
 <div id="bg"></div>
 <canvas id="canvas"></canvas>
+<div id="vignette"></div>
+
+<div id="err"></div>
 
 <div id="hud-top" class="hidden">
   <div id="score">0</div>
@@ -266,8 +242,8 @@
   </div>
   <h1>STACK TOWER</h1>
   <div class="sub">3D · Endless</div>
-  <button class="play-btn" onclick="Game.start()">PLAY</button>
-  <div class="hint">Тапни в нужный момент,<br>чтобы блок упал точно на башню.<br>Идеальное попадание — больше очков.</div>
+  <button class="play-btn" id="play-btn">PLAY</button>
+  <div class="hint">Тапни в нужный момент,<br>чтобы блок упал точно на башню.</div>
   <div class="stat-row">
     <div class="stat">
       <div class="stat-val" id="startBest">0</div>
@@ -291,137 +267,112 @@
     <div class="sc-val gold" id="goBest">0</div>
     <div class="new-best hidden" id="newBest">★ НОВЫЙ РЕКОРД</div>
   </div>
-  <button class="play-btn" onclick="Game.start()" style="margin-top:14px;">PLAY AGAIN</button>
+  <button class="play-btn" id="restart-btn" style="margin-top:14px;">PLAY AGAIN</button>
 </div>
 
 <script>
-//═════════════════════════════════════════════════════════════════
-// ENGINE — Three.js setup
-//═════════════════════════════════════════════════════════════════
-const Engine = (() => {
-  let renderer, scene, camera;
+(function() {
+  'use strict';
+
+  function showError(msg) {
+    const el = document.getElementById('err');
+    if (el) { el.textContent = '⚠ ' + msg; el.classList.add('show'); }
+    console.error(msg);
+  }
+
+  // Глобальный отлов ошибок — увидим их даже без DevTools
+  window.addEventListener('error', e => showError(e.message + ' (' + (e.filename || '') + ':' + (e.lineno || '?') + ')'));
+  window.addEventListener('unhandledrejection', e => showError('Promise: ' + (e.reason?.message || e.reason)));
+
+  if (typeof THREE === 'undefined') {
+    showError('Three.js не загрузился с CDN');
+    return;
+  }
+
+  // ════════ TELEGRAM ════════
+  try {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+      if (tg.setHeaderColor) tg.setHeaderColor('#0a0612');
+      if (tg.setBackgroundColor) tg.setBackgroundColor('#0a0612');
+    }
+  } catch (e) { console.warn('TG init:', e); }
+
+  // ════════ ENGINE ════════
+  const canvas = document.getElementById('canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x000000, 0); // прозрачный — виден CSS-фон
+
+  const scene = new THREE.Scene();
+
+  const aspect = window.innerWidth / window.innerHeight;
+  const camera = new THREE.OrthographicCamera(-8 * aspect, 8 * aspect, 8, -8, 0.1, 100);
+  camera.position.set(8, 10, 8);
+  camera.lookAt(0, 0, 0);
+  let cameraLookY = 0;
+
+  // ════════ ОСВЕЩЕНИЕ ════════
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  keyLight.position.set(8, 18, 8);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.width = 1024;
+  keyLight.shadow.mapSize.height = 1024;
+  keyLight.shadow.camera.near = 0.5;
+  keyLight.shadow.camera.far = 60;
+  keyLight.shadow.camera.left = -12;
+  keyLight.shadow.camera.right = 12;
+  keyLight.shadow.camera.top = 25;
+  keyLight.shadow.camera.bottom = -15;
+  keyLight.shadow.bias = -0.0005;
+  scene.add(keyLight);
+
+  const rimLight = new THREE.DirectionalLight(0xff5e9c, 0.5);
+  rimLight.position.set(-8, 8, -6);
+  scene.add(rimLight);
+
+  const fillLight = new THREE.DirectionalLight(0x6ab0ff, 0.35);
+  fillLight.position.set(6, 4, -8);
+  scene.add(fillLight);
+
+  // ════════ АНИМАЦИИ ════════
   let pendingAnims = [];
+  function addAnim(fn) { pendingAnims.push(fn); }
+  function clearAnims() { pendingAnims = []; }
 
-  function init(canvas) {
-    renderer = new THREE.WebGLRenderer({
-      canvas, antialias: true, powerPreference: 'high-performance',
-      alpha: true
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.setClearColor(0x000000, 0);
-
-    scene = new THREE.Scene();
-
-    const aspect = window.innerWidth / window.innerHeight;
-    camera = new THREE.OrthographicCamera(
-      -8 * aspect, 8 * aspect, 8, -8, 0.1, 100
-    );
-    camera.position.set(8, 10, 8);
-    camera.lookAt(0, 0, 0);
-
-    _buildLights();
-    _renderLoop();
-    window.addEventListener('resize', _onResize);
-  }
-
-  function _buildLights() {
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-
-    const key = new THREE.DirectionalLight(0xffffff, 0.85);
-    key.position.set(8, 18, 8);
-    key.castShadow = true;
-    key.shadow.mapSize.width = 2048;
-    key.shadow.mapSize.height = 2048;
-    key.shadow.camera.near = 0.5;
-    key.shadow.camera.far = 60;
-    key.shadow.camera.left = -15;
-    key.shadow.camera.right = 15;
-    key.shadow.camera.top = 25;
-    key.shadow.camera.bottom = -15;
-    key.shadow.bias = -0.0005;
-    key.shadow.radius = 3;
-    scene.add(key);
-
-    // Тёплый rim
-    const rim = new THREE.DirectionalLight(0xff8ec0, 0.45);
-    rim.position.set(-6, 5, -6);
-    scene.add(rim);
-
-    // Холодный fill
-    const fill = new THREE.DirectionalLight(0x6ab0ff, 0.30);
-    fill.position.set(6, 3, -8);
-    scene.add(fill);
-  }
-
-  function addAnimation(fn) { pendingAnims.push(fn); }
-  function clearAnimations() { pendingAnims = []; }
-
-  function moveCameraY(targetY, duration = 0.5) {
+  function moveCameraY(targetY, dur) {
+    dur = dur || 0.4;
     const startY = camera.position.y;
-    const startLookY = camera._lookY || 0;
+    const startLookY = cameraLookY;
+    const targetLookY = targetY - 10;
     let t = 0;
-    pendingAnims.push(dt => {
-      t = Math.min(t + dt / duration, 1);
-      const e = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    addAnim(dt => {
+      t = Math.min(t + dt / dur, 1);
+      const e = 1 - Math.pow(1 - t, 3);
       camera.position.y = startY + (targetY - startY) * e;
-      const lookY = startLookY + ((targetY - 10) - startLookY) * e;
-      camera._lookY = lookY;
-      camera.lookAt(0, lookY, 0);
+      cameraLookY = startLookY + (targetLookY - startLookY) * e;
+      camera.lookAt(0, cameraLookY, 0);
       return t >= 1;
     });
   }
 
   function resetCamera() {
     camera.position.set(8, 10, 8);
-    camera._lookY = 0;
+    cameraLookY = 0;
     camera.lookAt(0, 0, 0);
   }
 
-  let lastT = 0;
-  function _renderLoop() {
-    lastT = performance.now();
-    const loop = () => {
-      requestAnimationFrame(loop);
-      const now = performance.now();
-      const dt = Math.min((now - lastT) / 1000, 0.05);
-      lastT = now;
-      if (pendingAnims.length) pendingAnims = pendingAnims.filter(fn => !fn(dt));
-      renderer.render(scene, camera);
-    };
-    loop();
-  }
-
-  function _onResize() {
-    const aspect = window.innerWidth / window.innerHeight;
-    camera.left = -8 * aspect;
-    camera.right = 8 * aspect;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-
-  return {
-    init, addAnimation, clearAnimations, moveCameraY, resetCamera,
-    get scene() { return scene; },
-    get camera() { return camera; }
-  };
-})();
-
-//═════════════════════════════════════════════════════════════════
-// PARTICLES — эффект разлёта при идеальном попадании
-//═════════════════════════════════════════════════════════════════
-const Particles = (() => {
-  function burst(x, y, z, color) {
-    const count = 12;
-    const group = new THREE.Group();
-    Engine.scene.add(group);
-
-    for (let i = 0; i < count; i++) {
+  // ════════ ЧАСТИЦЫ ════════
+  function particleBurst(x, y, z, color) {
+    for (let i = 0; i < 10; i++) {
       const geo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
       const mat = new THREE.MeshStandardMaterial({
         color, emissive: color, emissiveIntensity: 0.5,
@@ -429,29 +380,24 @@ const Particles = (() => {
       });
       const p = new THREE.Mesh(geo, mat);
       p.position.set(x, y, z);
-
-      const a = (i / count) * Math.PI * 2;
+      scene.add(p);
+      const a = (i / 10) * Math.PI * 2;
       const vx = Math.cos(a) * (2 + Math.random() * 2);
       const vz = Math.sin(a) * (2 + Math.random() * 2);
-      const vy = 2 + Math.random() * 2;
-
-      group.add(p);
-
+      let vy = 2 + Math.random() * 2;
       let t = 0;
-      const life = 0.8;
-      Engine.addAnimation(dt => {
+      addAnim(dt => {
         t += dt;
-        const k = t / life;
         p.position.x += vx * dt;
-        p.position.y += vy * dt - 5 * t * dt * 4;
+        p.position.y += vy * dt;
         p.position.z += vz * dt;
+        vy -= 18 * dt;
         p.rotation.x += dt * 8;
         p.rotation.z += dt * 6;
-        mat.opacity = 1 - k;
-        if (t >= life) {
-          group.remove(p);
+        mat.opacity = Math.max(0, 1 - t / 0.8);
+        if (t >= 0.8) {
+          scene.remove(p);
           geo.dispose(); mat.dispose();
-          if (group.children.length === 0) Engine.scene.remove(group);
           return true;
         }
         return false;
@@ -459,7 +405,6 @@ const Particles = (() => {
     }
   }
 
-  // Кольцо-вспышка
   function shockwave(x, y, z, color) {
     const geo = new THREE.RingGeometry(0.1, 0.5, 32);
     const mat = new THREE.MeshBasicMaterial({
@@ -469,18 +414,16 @@ const Particles = (() => {
     const ring = new THREE.Mesh(geo, mat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(x, y + 0.1, z);
-    Engine.scene.add(ring);
-
+    scene.add(ring);
     let t = 0;
-    const life = 0.6;
-    Engine.addAnimation(dt => {
+    addAnim(dt => {
       t += dt;
-      const k = t / life;
-      const scale = 1 + k * 8;
-      ring.scale.set(scale, scale, 1);
+      const k = t / 0.6;
+      const s = 1 + k * 8;
+      ring.scale.set(s, s, 1);
       mat.opacity = 0.8 * (1 - k);
-      if (t >= life) {
-        Engine.scene.remove(ring);
+      if (t >= 0.6) {
+        scene.remove(ring);
         geo.dispose(); mat.dispose();
         return true;
       }
@@ -488,58 +431,44 @@ const Particles = (() => {
     });
   }
 
-  return { burst, shockwave };
-})();
-
-//═════════════════════════════════════════════════════════════════
-// GAME — основная логика стека
-//═════════════════════════════════════════════════════════════════
-const Game = (() => {
-  const BLOCK_HEIGHT = 0.6;
-  const BLOCK_BASE_SIZE = 4;     // ширина и глубина первого блока
+  // ════════ ИГРА ════════
+  const BLOCK_H = 0.6;
+  const BASE_SIZE = 4;
   const SPEED_BASE = 4.5;
-  const SPEED_INCREMENT = 0.12;
+  const SPEED_INC = 0.12;
   const SPEED_MAX = 9;
-  const PERFECT_THRESHOLD = 0.08; // насколько близко чтобы посчиталось perfect
+  const PERFECT_THR = 0.08;
 
   let blocks = [];
-  let movingBlock = null;       // активный движущийся блок
-  let moveAxis = 'x';            // 'x' или 'z'
+  let movingBlock = null;
+  let moveAxis = 'x';
   let moveDir = 1;
   let moveSpeed = SPEED_BASE;
   let score = 0;
-  let perfectCombo = 0;
-  let running = false;
-  let gameOverFlag = false;
+  let combo = 0;
+  let gameOver = false;
   let allowInput = false;
 
-  // Statistics в localStorage
-  let stats = {
-    best: 0,
-    games: 0
-  };
+  let stats = { best: 0, games: 0 };
   try {
-    const s = localStorage.getItem('stack3d_stats');
-    if (s) stats = { ...stats, ...JSON.parse(s) };
-  } catch {}
-
-  function _saveStats() {
-    try { localStorage.setItem('stack3d_stats', JSON.stringify(stats)); } catch {}
+    const s = localStorage.getItem('stack3d_v2');
+    if (s) stats = Object.assign(stats, JSON.parse(s));
+  } catch (e) {}
+  function saveStats() {
+    try { localStorage.setItem('stack3d_v2', JSON.stringify(stats)); } catch (e) {}
   }
 
-  // Цвет блока в зависимости от высоты — плавный градиент по HSL
-  function _blockColor(index) {
-    const hue = (200 + index * 8) % 360;
-    return new THREE.Color().setHSL(hue / 360, 0.65, 0.60);
+  function blockColor(idx) {
+    const hue = (200 + idx * 8) % 360;
+    return new THREE.Color().setHSL(hue / 360, 0.65, 0.6);
   }
 
-  function _makeBlock(size, position, color) {
+  function makeBlock(size, position, color) {
     const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
     const mat = new THREE.MeshStandardMaterial({
-      color,
-      roughness: 0.35,
-      metalness: 0.15,
-      emissive: color.clone().multiplyScalar(0.08)
+      color, roughness: 0.3, metalness: 0.15,
+      emissive: color.clone().multiplyScalar(0.12),
+      emissiveIntensity: 1
     });
     const m = new THREE.Mesh(geo, mat);
     m.position.copy(position);
@@ -548,23 +477,22 @@ const Game = (() => {
     return m;
   }
 
-  function _dropPiece(size, position, color, velocity) {
-    // Кусочек, который отвалился — падает с физикой
-    const piece = _makeBlock(size, position, color);
-    Engine.scene.add(piece);
+  function dropPiece(size, position, color, velocity) {
+    const piece = makeBlock(size, position, color);
+    scene.add(piece);
     let vy = 0;
-    let vRot = (Math.random() - 0.5) * 4;
+    const vRot = (Math.random() - 0.5) * 4;
     let t = 0;
-    Engine.addAnimation(dt => {
+    addAnim(dt => {
       t += dt;
-      vy -= 18 * dt;  // гравитация
+      vy -= 18 * dt;
       piece.position.y += vy * dt;
       piece.position.x += velocity.x * dt;
       piece.position.z += velocity.z * dt;
       piece.rotation.z += vRot * dt;
       piece.rotation.x += vRot * 0.5 * dt;
-      if (piece.position.y < -15) {
-        Engine.scene.remove(piece);
+      if (piece.position.y < -15 || t > 5) {
+        scene.remove(piece);
         piece.geometry.dispose();
         piece.material.dispose();
         return true;
@@ -573,97 +501,71 @@ const Game = (() => {
     });
   }
 
-  function start() {
-    // Скрыть стартовый/гейм-овер экраны
+  function startGame() {
     document.getElementById('start').classList.add('hide');
     document.getElementById('gameover').classList.remove('show');
     document.getElementById('hud-top').classList.remove('hidden');
 
-    // Сброс
-    _clearScene();
-    score = 0;
-    perfectCombo = 0;
-    moveSpeed = SPEED_BASE;
-    gameOverFlag = false;
-    running = true;
-    allowInput = false;
-    Engine.clearAnimations();
-    Engine.resetCamera();
-
-    _updateScoreUI();
-
-    // База — широкий блок внизу
-    const baseColor = _blockColor(0);
-    const baseBlock = _makeBlock(
-      { x: BLOCK_BASE_SIZE, y: BLOCK_HEIGHT * 3, z: BLOCK_BASE_SIZE },
-      new THREE.Vector3(0, -BLOCK_HEIGHT * 1.5, 0),
-      baseColor
-    );
-    baseBlock.userData = {
-      size: { x: BLOCK_BASE_SIZE, y: BLOCK_HEIGHT * 3, z: BLOCK_BASE_SIZE }
-    };
-    Engine.scene.add(baseBlock);
-    blocks.push(baseBlock);
-
-    // Первый летающий блок
-    _spawnNext();
-  }
-
-  function _clearScene() {
+    // Очистка
     blocks.forEach(b => {
-      Engine.scene.remove(b);
-      if (b.geometry) b.geometry.dispose();
-      if (b.material) b.material.dispose();
+      scene.remove(b);
+      b.geometry.dispose();
+      b.material.dispose();
     });
     blocks = [];
     if (movingBlock) {
-      Engine.scene.remove(movingBlock);
-      if (movingBlock.geometry) movingBlock.geometry.dispose();
-      if (movingBlock.material) movingBlock.material.dispose();
+      scene.remove(movingBlock);
+      movingBlock.geometry.dispose();
+      movingBlock.material.dispose();
       movingBlock = null;
     }
+    clearAnims();
+    resetCamera();
+    score = 0;
+    combo = 0;
+    moveSpeed = SPEED_BASE;
+    gameOver = false;
+    allowInput = false;
+    updateScoreUI();
+
+    // База
+    const baseColor = blockColor(0);
+    const baseBlock = makeBlock(
+      { x: BASE_SIZE, y: BLOCK_H * 3, z: BASE_SIZE },
+      new THREE.Vector3(0, -BLOCK_H * 1.5, 0),
+      baseColor
+    );
+    baseBlock.userData = { size: { x: BASE_SIZE, y: BLOCK_H * 3, z: BASE_SIZE } };
+    scene.add(baseBlock);
+    blocks.push(baseBlock);
+
+    spawnNext();
   }
 
-  function _spawnNext() {
+  function spawnNext() {
     const last = blocks[blocks.length - 1];
     const lastSize = last.userData.size;
     const lastY = last.position.y + lastSize.y / 2;
 
-    // Чередуем оси X и Z
     moveAxis = (blocks.length % 2 === 1) ? 'x' : 'z';
     moveDir = 1;
 
-    const newSize = {
-      x: lastSize.x,
-      y: BLOCK_HEIGHT,
-      z: lastSize.z
-    };
+    const newSize = { x: lastSize.x, y: BLOCK_H, z: lastSize.z };
+    const pos = new THREE.Vector3(last.position.x, lastY + BLOCK_H / 2, last.position.z);
+    if (moveAxis === 'x') pos.x = -6;
+    else pos.z = -6;
 
-    // Стартовая позиция — за пределами видимой части по оси движения
-    const startOffset = 6;
-    const pos = new THREE.Vector3(last.position.x, lastY + BLOCK_HEIGHT / 2, last.position.z);
-    if (moveAxis === 'x') pos.x = -startOffset;
-    else pos.z = -startOffset;
+    movingBlock = makeBlock(newSize, pos, blockColor(blocks.length));
+    movingBlock.userData = { size: Object.assign({}, newSize) };
+    scene.add(movingBlock);
 
-    const color = _blockColor(blocks.length);
-    movingBlock = _makeBlock(newSize, pos, color);
-    movingBlock.userData = { size: { ...newSize } };
-    Engine.scene.add(movingBlock);
-
-    // Камера поднимается за башней
     if (blocks.length > 3) {
-      const targetCamY = blocks.length * BLOCK_HEIGHT + 9;
-      Engine.moveCameraY(targetCamY, 0.4);
+      moveCameraY(blocks.length * BLOCK_H + 9, 0.4);
     }
 
     allowInput = true;
-    _runMover();
-  }
-
-  function _runMover() {
-    Engine.addAnimation(dt => {
-      if (!movingBlock || gameOverFlag) return true;
-
+    addAnim(dt => {
+      if (!movingBlock || gameOver) return true;
       if (moveAxis === 'x') {
         movingBlock.position.x += moveDir * moveSpeed * dt;
         if (movingBlock.position.x > 6) moveDir = -1;
@@ -678,179 +580,148 @@ const Game = (() => {
   }
 
   function placeBlock() {
-    if (!running || !allowInput || gameOverFlag || !movingBlock) return;
+    if (!allowInput || gameOver || !movingBlock) return;
     allowInput = false;
 
     const last = blocks[blocks.length - 1];
     const lastSize = last.userData.size;
     const movSize = movingBlock.userData.size;
 
-    if (moveAxis === 'x') {
-      const diff = movingBlock.position.x - last.position.x;
-      const overlap = movSize.x - Math.abs(diff);
+    const ax = moveAxis;
+    const diff = ax === 'x' ? movingBlock.position.x - last.position.x : movingBlock.position.z - last.position.z;
+    const movDim = ax === 'x' ? movSize.x : movSize.z;
+    const overlap = movDim - Math.abs(diff);
 
-      if (overlap <= 0) {
-        // Полный промах — Game Over
-        _missEnd();
-        return;
-      }
+    if (overlap <= 0) { missEnd(); return; }
 
-      // Perfect?
-      const isPerfect = Math.abs(diff) < PERFECT_THRESHOLD;
-      if (isPerfect) {
-        // Идеально — выровнять блок, не обрезать, бонус
-        movingBlock.position.x = last.position.x;
-        perfectCombo++;
-        score += 5;
-        _showCombo();
-        Particles.burst(movingBlock.position.x, movingBlock.position.y, movingBlock.position.z, movingBlock.material.color);
-        Particles.shockwave(movingBlock.position.x, movingBlock.position.y - movSize.y / 2, movingBlock.position.z, movingBlock.material.color);
+    const isPerfect = Math.abs(diff) < PERFECT_THR;
 
-        // Каждые 3 идеальных — растим блок обратно
-        if (perfectCombo > 0 && perfectCombo % 3 === 0) {
-          const grow = Math.min(0.4, BLOCK_BASE_SIZE - movSize.x);
-          if (grow > 0.01) {
+    if (isPerfect) {
+      // Выровнять
+      if (ax === 'x') movingBlock.position.x = last.position.x;
+      else movingBlock.position.z = last.position.z;
+      combo++;
+      score += 5;
+      showCombo();
+      particleBurst(movingBlock.position.x, movingBlock.position.y, movingBlock.position.z, movingBlock.material.color);
+      shockwave(movingBlock.position.x, movingBlock.position.y - movSize.y / 2, movingBlock.position.z, movingBlock.material.color);
+
+      // Растим обратно каждые 3 perfect
+      if (combo > 0 && combo % 3 === 0) {
+        const lastDim = ax === 'x' ? lastSize.x : lastSize.z;
+        const grow = Math.min(0.4, BASE_SIZE - movDim);
+        if (grow > 0.01) {
+          if (ax === 'x') {
             const newSize = movSize.x + grow;
             movingBlock.geometry.dispose();
             movingBlock.geometry = new THREE.BoxGeometry(newSize, movSize.y, movSize.z);
             movingBlock.userData.size.x = newSize;
-          }
-        }
-      } else {
-        perfectCombo = 0;
-        // Обрезаем блок
-        const newWidth = overlap;
-        const newCenterX = (Math.max(movingBlock.position.x - movSize.x/2, last.position.x - lastSize.x/2) +
-                          Math.min(movingBlock.position.x + movSize.x/2, last.position.x + lastSize.x/2)) / 2;
-        // Отвалившийся кусок
-        const dropX = (diff > 0)
-          ? newCenterX + newWidth/2 + (movSize.x - newWidth)/2
-          : newCenterX - newWidth/2 - (movSize.x - newWidth)/2;
-        const dropWidth = movSize.x - newWidth;
-        _dropPiece(
-          { x: dropWidth, y: movSize.y, z: movSize.z },
-          new THREE.Vector3(dropX, movingBlock.position.y, movingBlock.position.z),
-          movingBlock.material.color,
-          { x: diff > 0 ? 2 : -2, z: 0 }
-        );
-        // Обновляем активный
-        movingBlock.geometry.dispose();
-        movingBlock.geometry = new THREE.BoxGeometry(newWidth, movSize.y, movSize.z);
-        movingBlock.position.x = newCenterX;
-        movingBlock.userData.size.x = newWidth;
-        score += 1;
-      }
-    } else {
-      // Та же логика по Z
-      const diff = movingBlock.position.z - last.position.z;
-      const overlap = movSize.z - Math.abs(diff);
-
-      if (overlap <= 0) { _missEnd(); return; }
-
-      const isPerfect = Math.abs(diff) < PERFECT_THRESHOLD;
-      if (isPerfect) {
-        movingBlock.position.z = last.position.z;
-        perfectCombo++;
-        score += 5;
-        _showCombo();
-        Particles.burst(movingBlock.position.x, movingBlock.position.y, movingBlock.position.z, movingBlock.material.color);
-        Particles.shockwave(movingBlock.position.x, movingBlock.position.y - movSize.y / 2, movingBlock.position.z, movingBlock.material.color);
-
-        if (perfectCombo > 0 && perfectCombo % 3 === 0) {
-          const grow = Math.min(0.4, BLOCK_BASE_SIZE - movSize.z);
-          if (grow > 0.01) {
+          } else {
             const newSize = movSize.z + grow;
             movingBlock.geometry.dispose();
             movingBlock.geometry = new THREE.BoxGeometry(movSize.x, movSize.y, newSize);
             movingBlock.userData.size.z = newSize;
           }
         }
+      }
+    } else {
+      combo = 0;
+      // Обрезка
+      if (ax === 'x') {
+        const newCenter = (Math.max(movingBlock.position.x - movSize.x/2, last.position.x - lastSize.x/2) +
+                          Math.min(movingBlock.position.x + movSize.x/2, last.position.x + lastSize.x/2)) / 2;
+        const dropDim = movSize.x - overlap;
+        const dropX = diff > 0
+          ? newCenter + overlap/2 + dropDim/2
+          : newCenter - overlap/2 - dropDim/2;
+        dropPiece(
+          { x: dropDim, y: movSize.y, z: movSize.z },
+          new THREE.Vector3(dropX, movingBlock.position.y, movingBlock.position.z),
+          movingBlock.material.color,
+          { x: diff > 0 ? 2 : -2, z: 0 }
+        );
+        movingBlock.geometry.dispose();
+        movingBlock.geometry = new THREE.BoxGeometry(overlap, movSize.y, movSize.z);
+        movingBlock.position.x = newCenter;
+        movingBlock.userData.size.x = overlap;
       } else {
-        perfectCombo = 0;
-        const newDepth = overlap;
-        const newCenterZ = (Math.max(movingBlock.position.z - movSize.z/2, last.position.z - lastSize.z/2) +
+        const newCenter = (Math.max(movingBlock.position.z - movSize.z/2, last.position.z - lastSize.z/2) +
                           Math.min(movingBlock.position.z + movSize.z/2, last.position.z + lastSize.z/2)) / 2;
-        const dropZ = (diff > 0)
-          ? newCenterZ + newDepth/2 + (movSize.z - newDepth)/2
-          : newCenterZ - newDepth/2 - (movSize.z - newDepth)/2;
-        const dropDepth = movSize.z - newDepth;
-        _dropPiece(
-          { x: movSize.x, y: movSize.y, z: dropDepth },
+        const dropDim = movSize.z - overlap;
+        const dropZ = diff > 0
+          ? newCenter + overlap/2 + dropDim/2
+          : newCenter - overlap/2 - dropDim/2;
+        dropPiece(
+          { x: movSize.x, y: movSize.y, z: dropDim },
           new THREE.Vector3(movingBlock.position.x, movingBlock.position.y, dropZ),
           movingBlock.material.color,
           { x: 0, z: diff > 0 ? 2 : -2 }
         );
         movingBlock.geometry.dispose();
-        movingBlock.geometry = new THREE.BoxGeometry(movSize.x, movSize.y, newDepth);
-        movingBlock.position.z = newCenterZ;
-        movingBlock.userData.size.z = newDepth;
-        score += 1;
+        movingBlock.geometry = new THREE.BoxGeometry(movSize.x, movSize.y, overlap);
+        movingBlock.position.z = newCenter;
+        movingBlock.userData.size.z = overlap;
       }
+      score += 1;
     }
 
     blocks.push(movingBlock);
     movingBlock = null;
+    updateScoreUI();
+    moveSpeed = Math.min(SPEED_MAX, SPEED_BASE + score * SPEED_INC);
 
-    _updateScoreUI();
-
-    // Ускоряемся
-    moveSpeed = Math.min(SPEED_MAX, SPEED_BASE + score * SPEED_INCREMENT);
-
-    setTimeout(() => {
-      if (!gameOverFlag) _spawnNext();
-    }, 150);
+    setTimeout(() => { if (!gameOver) spawnNext(); }, 150);
   }
 
-  function _missEnd() {
-    // Промах — блок падает
+  function missEnd() {
     if (movingBlock) {
       const movSize = movingBlock.userData.size;
-      const vx = (moveAxis === 'x') ? (moveDir * 1.5) : 0;
-      const vz = (moveAxis === 'z') ? (moveDir * 1.5) : 0;
-      _dropPiece(
+      const vx = moveAxis === 'x' ? moveDir * 1.5 : 0;
+      const vz = moveAxis === 'z' ? moveDir * 1.5 : 0;
+      dropPiece(
         movSize,
         movingBlock.position.clone(),
         movingBlock.material.color,
         { x: vx, z: vz }
       );
-      Engine.scene.remove(movingBlock);
+      scene.remove(movingBlock);
       movingBlock.geometry.dispose();
       movingBlock.material.dispose();
       movingBlock = null;
     }
 
-    gameOverFlag = true;
-    running = false;
+    gameOver = true;
     allowInput = false;
-
     stats.games++;
     const newBest = score > stats.best;
     if (newBest) stats.best = score;
-    _saveStats();
+    saveStats();
 
     setTimeout(() => {
       document.getElementById('hud-top').classList.add('hidden');
       document.getElementById('goScore').textContent = score;
       document.getElementById('goBest').textContent = stats.best;
-      document.getElementById('newBest').classList.toggle('hidden', !newBest);
+      const nbEl = document.getElementById('newBest');
+      if (newBest) nbEl.classList.remove('hidden');
+      else nbEl.classList.add('hidden');
       document.getElementById('gameover').classList.add('show');
     }, 1000);
   }
 
-  function _updateScoreUI() {
+  function updateScoreUI() {
     const el = document.getElementById('score');
     el.textContent = score;
     el.classList.remove('bump', 'perfect');
-    void el.offsetWidth; // restart animation
+    void el.offsetWidth;
     el.classList.add('bump');
-    if (perfectCombo > 0) el.classList.add('perfect');
+    if (combo > 0) el.classList.add('perfect');
     document.getElementById('best').textContent = 'BEST ' + stats.best;
   }
 
-  function _showCombo() {
-    if (perfectCombo < 2) return;
+  function showCombo() {
+    if (combo < 2) return;
     const el = document.getElementById('combo');
-    el.textContent = 'PERFECT ×' + perfectCombo;
+    el.textContent = 'PERFECT ×' + combo;
     el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
@@ -860,52 +731,45 @@ const Game = (() => {
     document.getElementById('startBest').textContent = stats.best;
     document.getElementById('startGames').textContent = stats.games;
   }
+  updateStartScreen();
 
-  return { start, placeBlock, updateStartScreen };
-})();
-
-//═════════════════════════════════════════════════════════════════
-// INIT
-//═════════════════════════════════════════════════════════════════
-(() => {
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready(); tg.expand();
-    if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
-    if (tg.setHeaderColor) tg.setHeaderColor('#0a0612');
-    if (tg.setBackgroundColor) tg.setBackgroundColor('#0a0612');
+  // ════════ RENDER LOOP ════════
+  let lastT = performance.now();
+  function loop() {
+    requestAnimationFrame(loop);
+    const now = performance.now();
+    const dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT = now;
+    if (pendingAnims.length) {
+      pendingAnims = pendingAnims.filter(fn => !fn(dt));
+    }
+    renderer.render(scene, camera);
   }
+  loop();
 
-  Engine.init(document.getElementById('canvas'));
-  Game.updateStartScreen();
+  // ════════ RESIZE ════════
+  window.addEventListener('resize', () => {
+    const a = window.innerWidth / window.innerHeight;
+    camera.left = -8 * a;
+    camera.right = 8 * a;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 
-  // Тап = поставить блок
-  const handleTap = (e) => {
-    // Не реагируем на тап по кнопкам/стартовому экрану
+  // ════════ INPUT ════════
+  document.getElementById('play-btn').addEventListener('click', startGame);
+  document.getElementById('restart-btn').addEventListener('click', startGame);
+
+  function handleTap(e) {
     if (e.target.closest('button')) return;
     if (!document.getElementById('start').classList.contains('hide')) return;
     if (document.getElementById('gameover').classList.contains('show')) return;
-    Game.placeBlock();
-  };
-  document.addEventListener('touchstart', handleTap, { passive: true });
-  document.addEventListener('mousedown', (e) => {
-    // На десктопе — только если это не клик по кнопке
-    if (e.button === 0) handleTap(e);
-  });
-
-  // Telegram BackButton
-  if (tg?.BackButton) {
-    tg.BackButton.onClick(() => {
-      // На главном — закрываем мини-апп
-      if (!document.getElementById('start').classList.contains('hide')) {
-        tg.close();
-      } else {
-        // В игре — на главную
-        location.reload();
-      }
-    });
-    tg.BackButton.hide();
+    placeBlock();
   }
+  document.addEventListener('touchstart', handleTap, { passive: true });
+  document.addEventListener('mousedown', e => { if (e.button === 0) handleTap(e); });
+
+  console.log('Stack Tower 3D: ready');
 })();
 </script>
 </body>
