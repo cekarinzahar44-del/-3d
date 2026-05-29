@@ -760,14 +760,23 @@
   document.getElementById('play-btn').addEventListener('click', startGame);
   document.getElementById('restart-btn').addEventListener('click', startGame);
 
+  let lastTapTime = 0;
   function handleTap(e) {
     if (e.target.closest('button')) return;
     if (!document.getElementById('start').classList.contains('hide')) return;
     if (document.getElementById('gameover').classList.contains('show')) return;
+    // Защита от двойного срабатывания (touch + эмулированный mouse на iOS)
+    const now = Date.now();
+    if (now - lastTapTime < 250) return;
+    lastTapTime = now;
     placeBlock();
   }
-  document.addEventListener('touchstart', handleTap, { passive: true });
-  document.addEventListener('mousedown', e => { if (e.button === 0) handleTap(e); });
+  // Определяем, есть ли тач. Если да — слушаем ТОЛЬКО touch, иначе mouse.
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    document.addEventListener('touchstart', handleTap, { passive: true });
+  } else {
+    document.addEventListener('mousedown', e => { if (e.button === 0) handleTap(e); });
+  }
 
   console.log('Stack Tower 3D: ready');
 })();
